@@ -13,7 +13,7 @@ ext {
 }
 
 android {
-    namespace "com.ztermx"
+    namespace "com.termux"
 
     compileSdkVersion project.properties.compileSdkVersion.toInteger()
     ndkVersion = System.getenv("JITPACK_NDK_VERSION") ?: project.properties.ndkVersion
@@ -42,6 +42,7 @@ android {
     }
 
     defaultConfig {
+        applicationId "com.ztermx"
         ndk {
             abiFilters "arm64-v8a"
         }
