@@ -380,10 +380,10 @@ final class TermuxInstaller {
         String arch = getDeviceArch();
         File cacheDir = new File("/data/data/com.ztermx/cache/bootstrap");
         if (!cacheDir.exists()) cacheDir.mkdirs();
-        File cachedZip = new File(cacheDir, "bootstrap-" + arch + ".zip");
+        File cachedZip = new File(cacheDir, "bootstrap-" + arch + "-ztermx.zip");
 
         if (!cachedZip.exists() || cachedZip.length() == 0) {
-            String url = "https://github.com/nasanata13/Zterm-bootstrap/releases/download/v2.0.0/bootstrap-" + arch + ".zip";
+            String url = "https://github.com/nasanata13/Zterm-bootstrap/releases/download/v2.0.0/bootstrap-" + arch + "-ztermx.zip";
             try {
                 downloadFile(url, cachedZip);
             } catch (IOException e) {

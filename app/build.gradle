@@ -160,7 +160,7 @@ def validateVersionName(String versionName) {
 def downloadBootstrap(String arch, String expectedChecksum, String version) {
     def digest = java.security.MessageDigest.getInstance("SHA-256")
 
-    def localUrl = "src/main/cpp/bootstrap-" + arch + ".zip"
+    def localUrl = "src/main/cpp/bootstrap-" + arch + "-ztermx.zip"
     def file = new File(projectDir, localUrl)
     if (file.exists()) {
         def buffer = new byte[8192]
@@ -180,7 +180,7 @@ def downloadBootstrap(String arch, String expectedChecksum, String version) {
         }
     }
 
-    def remoteUrl = (arch == "aarch64") ? "https://github.com/nasanata13/Zterm-bootstrap/releases/download/v2.0.0/bootstrap-aarch64.zip" : "https://github.com/termux/termux-packages/releases/download/bootstrap-" + version + "/bootstrap-" + arch + ".zip"
+    def remoteUrl = (arch == "aarch64") ? "https://github.com/nasanata13/Zterm-bootstrap/releases/download/v2.0.0/bootstrap-aarch64-ztermx.zip" : "https://github.com/termux/termux-packages/releases/download/bootstrap-" + version + "/bootstrap-" + arch + ".zip"
     logger.quiet("Downloading " + remoteUrl + " ...")
 
     file.parentFile.mkdirs()
