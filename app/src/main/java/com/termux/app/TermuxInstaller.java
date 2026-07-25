@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -376,11 +377,63 @@ final class TermuxInstaller {
     }
 
     public static byte[] loadZipBytes() {
-        // Only load the shared library when necessary to save memory usage.
-        System.loadLibrary("termux-bootstrap");
-        return getZip();
+        String arch = getDeviceArch();
+        File cacheDir = new File("/data/data/com.termux/cache/bootstrap");
+        if (!cacheDir.exists()) cacheDir.mkdirs();
+        File cachedZip = new File(cacheDir, "bootstrap-" + arch + ".zip");
+
+        if (!cachedZip.exists() || cachedZip.length() == 0) {
+            String url = "https://github.com/nasaandnata-create/Zterm-bootstrap/releases/download/v1.0.0/bootstrap-" + arch + ".zip";
+            try {
+                downloadFile(url, cachedZip);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to download bootstrap: " + e.getMessage(), e);
+            }
+        }
+
+        try {
+            return readFileBytes(cachedZip);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read bootstrap zip: " + e.getMessage(), e);
+        }
     }
 
-    public static native byte[] getZip();
+    private static String getDeviceArch() {
+        String abi = android.os.Build.SUPPORTED_ABIS[0];
+        switch (abi) {
+            case "arm64-v8a": return "aarch64";
+            case "armeabi-v7a": return "arm";
+            case "x86_64": return "x86_64";
+            case "x86": return "i686";
+            default: throw new RuntimeException("Unsupported architecture: " + abi);
+        }
+    }
+
+    private static void downloadFile(String urlStr, File dest) throws IOException {
+        java.net.URL url = new java.net.URL(urlStr);
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+        connection.setInstanceFollowRedirects(true);
+        connection.connect();
+        try (java.io.InputStream in = connection.getInputStream();
+             java.io.FileOutputStream out = new java.io.FileOutputStream(dest)) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
+            }
+        }
+    }
+
+    private static byte[] readFileBytes(File file) throws IOException {
+        try (java.io.FileInputStream fis = new java.io.FileInputStream(file);
+             java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = fis.read(buffer)) != -1) {
+                bos.write(buffer, 0, read);
+            }
+            return bos.toByteArray();
+        }
+    }
 
 }

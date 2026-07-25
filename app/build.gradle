@@ -42,6 +42,9 @@ android {
     }
 
     defaultConfig {
+        ndk {
+            abiFilters "arm64-v8a"
+        }
         minSdkVersion project.properties.minSdkVersion.toInteger()
         targetSdkVersion project.properties.targetSdkVersion.toInteger()
         versionCode 118
@@ -60,12 +63,6 @@ android {
         manifestPlaceholders.TERMUX_STYLING_APP_NAME = "Termux:Styling"
         manifestPlaceholders.TERMUX_TASKER_APP_NAME = "Termux:Tasker"
         manifestPlaceholders.TERMUX_WIDGET_APP_NAME = "Termux:Widget"
-
-        externalNativeBuild {
-            ndkBuild {
-                cFlags "-std=c11", "-Wall", "-Wextra", "-Werror", "-Os", "-fno-stack-protector", "-Wl,--gc-sections"
-            }
-        }
 
         splits {
             abi {
@@ -105,12 +102,6 @@ android {
 
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
-    }
-
-    externalNativeBuild {
-        ndkBuild {
-            path "src/main/cpp/Android.mk"
-        }
     }
 
     lint {
