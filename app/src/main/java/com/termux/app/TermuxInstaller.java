@@ -434,6 +434,7 @@ final class TermuxInstaller {
             }
             return bos.toByteArray();
         }
+    }
 
     public static void checkForBootstrapUpdate(android.app.Activity activity) {
         new Thread(() -> {
@@ -515,8 +516,6 @@ final class TermuxInstaller {
                 activity.runOnUiThread(progress::dismiss);
             }
         }).start();
-    }
-
     }
 
 }
