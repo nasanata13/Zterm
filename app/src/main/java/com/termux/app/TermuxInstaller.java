@@ -383,7 +383,7 @@ final class TermuxInstaller {
         File cachedZip = new File(cacheDir, "bootstrap-" + arch + "-ztermx.zip");
 
         if (!cachedZip.exists() || cachedZip.length() == 0) {
-            String url = "https://github.com/nasanata13/Zterm-bootstrap/releases/download/v2.0.0/bootstrap-" + arch + "-ztermx.zip";
+            String url = "https://github.com/nasanata13/Zterm-bootstrap/releases/download/v3.1.0/bootstrap-" + arch + "-ztermx.zip";
             try {
                 downloadFile(url, cachedZip);
             } catch (IOException e) {
@@ -434,6 +434,89 @@ final class TermuxInstaller {
             }
             return bos.toByteArray();
         }
+
+    public static void checkForBootstrapUpdate(android.app.Activity activity) {
+        new Thread(() -> {
+            try {
+                String latest = fetchLatestBootstrapVersion();
+                String current = readLocalVersion();
+                if (latest != null && !latest.equals(current)) {
+                    activity.runOnUiThread(() -> new AlertDialog.Builder(activity)
+                        .setTitle("Update Bootstrap Tersedia")
+                        .setMessage("Versi " + latest + " tersedia. Update sekarang?")
+                        .setPositiveButton("Update", (d, w) -> runBootstrapUpdate(activity, latest))
+                        .setNegativeButton("Nanti", null)
+                        .show());
+                }
+            } catch (Exception e) {
+            }
+        }).start();
+    }
+
+    private static String fetchLatestBootstrapVersion() throws IOException {
+        java.net.URL url = new java.net.URL("https://api.github.com/repos/nasanata13/Zterm-bootstrap/releases/latest");
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) sb.append(line);
+        reader.close();
+        String body = sb.toString();
+        int idx = body.indexOf("tag_name");
+        if (idx == -1) return null;
+        int firstColon = body.indexOf(':', idx) + 1;
+        int startQuote = body.indexOf('"', firstColon) + 1;
+        int endQuote = body.indexOf('"', startQuote);
+        return body.substring(startQuote, endQuote);
+    }
+
+    private static String readLocalVersion() {
+        File f = new File("/data/data/com.ztermx/files/usr/etc/zterm-bootstrap-version");
+        if (!f.exists()) return "none";
+        try (BufferedReader r = new BufferedReader(new java.io.FileReader(f))) {
+            return r.readLine();
+        } catch (IOException e) {
+            return "none";
+        }
+    }
+
+    private static void runBootstrapUpdate(android.app.Activity activity, String latest) {
+        ProgressDialog progress = ProgressDialog.show(activity, null, "Updating bootstrap...", true, false);
+        new Thread(() -> {
+            try {
+                java.util.List<String> scriptLines = new java.util.ArrayList<>();
+                scriptLines.add("curl -Ls https://github.com/nasanata13/Zterm-bootstrap/releases/download/" + latest + "/bootstrap-aarch64-ztermx.zip -o $PREFIX/tmp/new.zip");
+                scriptLines.add("rm -rf /data/data/com.ztermx/files/usr-staging");
+                scriptLines.add("mkdir -p /data/data/com.ztermx/files/usr-staging");
+                scriptLines.add("unzip -q $PREFIX/tmp/new.zip -d /data/data/com.ztermx/files/usr-staging");
+                scriptLines.add("dpkg --get-selections | awk '$2 ~ /^install$/{print $1}' > $HOME/.zterm-packages.txt");
+                scriptLines.add("mv $PREFIX /data/data/com.ztermx/files/usr-old");
+                scriptLines.add("mv /data/data/com.ztermx/files/usr-staging $PREFIX");
+                scriptLines.add("apt update -y");
+                scriptLines.add("xargs -a $HOME/.zterm-packages.txt apt install -y");
+                scriptLines.add("echo " + latest + " > $PREFIX/etc/zterm-bootstrap-version");
+                scriptLines.add("rm -rf /data/data/com.ztermx/files/usr-old");
+
+                File scriptFile = new File("/data/data/com.ztermx/files/usr/tmp/update-bootstrap.sh");
+                try (java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(scriptFile))) {
+                    for (String l : scriptLines) pw.println(l);
+                }
+
+                ProcessBuilder pb = new ProcessBuilder("/data/data/com.ztermx/files/usr/bin/bash", scriptFile.getAbsolutePath());
+                pb.redirectErrorStream(true);
+                Process p = pb.start();
+                p.waitFor();
+
+                activity.runOnUiThread(() -> {
+                    progress.dismiss();
+                    android.widget.Toast.makeText(activity, "Bootstrap updated to " + latest, android.widget.Toast.LENGTH_LONG).show();
+                });
+            } catch (Exception e) {
+                activity.runOnUiThread(progress::dismiss);
+            }
+        }).start();
+    }
+
     }
 
 }

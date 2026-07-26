@@ -213,6 +213,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         setActivityTheme();
 
         SplashScreen.installSplashScreen(this);
+        TermuxInstaller.checkForBootstrapUpdate(this);
 
         super.onCreate(savedInstanceState);
 
